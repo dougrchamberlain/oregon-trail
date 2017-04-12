@@ -124,6 +124,7 @@ let continueMenu = Blessed.box({
     tags: true
 });
 screen.append(continueMenu);
+continueMenu.hide();
 
 continueMenu.key(['enter'],() =>{
    journey = false;
