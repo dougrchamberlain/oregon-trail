@@ -1,28 +1,25 @@
 // Require the Blessed API.
 var Blessed = require('blessed');
 let moment = require('moment');
+let _ = require('lodash');
 
 let location = 'Independence';
 let date = moment('03/01/1848','MM/DD/YYYY');
 let temp = 'cold';
-let health = 'good';
-let hunger = 0;
 let miles = 0;
-
-
 
 let pace = ['slow','steady','fast','grueling'];
 let rations = ['meager','filling','generous'];
+let health = ['very poor', 'poor', 'okay', 'good', 'great'];
 
+
+let currentHealth = health[4];
 let currentRations = rations[0];
 let currentPace = pace[0];
+let currentWeather = _.random(0,5);
+let currentFood = 1600;
 
 let journey = false;
-
-let statusContent = `Weather: ${temp}\n` +
-    `Health: ${health}\n` +
-    `Pace: ${currentPace}\n` +
-    `Rations: ${currentRations}`;
 
 // Initialize the screen widget.
 var screen = Blessed.screen({
@@ -31,7 +28,7 @@ var screen = Blessed.screen({
     useBCE: true,
     log: `${__dirname}/application.log`,
     debug: true,
-    dockBorders: true
+    dockBorders: false
 });
 
 // Specify the title of the application.
@@ -41,6 +38,7 @@ screen.title = 'Oregon Trail';
 const dateLocationBox = Blessed.box({
     width:'100%',
     height:4,
+    top: '0%+1',
     align: 'center',
     content: '',
     padding: 1,
@@ -49,7 +47,7 @@ const dateLocationBox = Blessed.box({
 });
 
 const locationField = Blessed.text({
-    top: 'top',
+    top: '0%',
     left: 'center',
     content: location,
     align: 'center',
@@ -73,12 +71,31 @@ const statusBox = Blessed.box({
     padding:1,
     fg: '#000',
     bg: '#fff',
-    content: statusContent
-    ,
     align: 'center',
     top: 5,
 });
 
+const healthStatusField = Blessed.text({
+    content: `Health: ${currentHealth}`,
+    top:0
+});
+const paceStatusField =Blessed.text({
+    content: `Pace: ${currentPace}`,
+    top: '0%+1'
+});
+const weatherStatusField = Blessed.text({
+    content: `Weather: ${currentWeather}`,
+    top: '0%+2'
+});
+const rationsStatusField = Blessed.text({
+    content: `Rations: ${currentRations}`,
+    top: '0%+3'
+});
+
+statusBox.append(weatherStatusField);
+statusBox.append(healthStatusField);
+statusBox.append(paceStatusField);
+statusBox.append(rationsStatusField);
 
 dateLocationBox.append(locationField);
 dateLocationBox.append(dateField);
@@ -90,7 +107,7 @@ screen.append(statusBox);
 screen.key(['p'],function(){
     "use strict";
     currentPace = shiftItems(pace);
-    statusBox.setLine(2,`Pace: ${currentPace}`);
+    paceStatusField.setContent(`Pace: ${currentPace}`);
     screen.alloc();
     screen.title = 'change pace';
     screen.render();
@@ -99,18 +116,27 @@ screen.key(['p'],function(){
 screen.key(['r'],function(){
     "use strict";
     currentRations = shiftItems(rations);
-    statusBox.setLine(3,`Rations: ${currentRations}`);
+    rationsStatusField.setContent(`Rations: ${currentRations}`);
     screen.alloc();
     screen.title = 'change pace';
     screen.render();
 });
+let resting = false;
 
 let gameLoop = setInterval(()=>{
     if(journey) {
         "use strict";
         date.add(1, 'day');
         dateField.setContent(date.format('MMMM Do YYYY'));
+        weatherStatusField.setContent(`Weather: ${currentWeather}`);
+        if(!resting){
+            miles+=(20 *(1 * 1)); //20 miles a day adjusted for number of oxen and pace
+        }
+         currentFood-=(5 * 2); //eat food subtract number of party members * rations amount
+
+        statusBox.setLine(0,`Miles Traveled: ${miles} | Food Remaining: ${currentFood}`);
     }
+
     screen.render();
 },1000);
 
@@ -123,27 +149,51 @@ let continueMenu = Blessed.box({
     bottom: 0,
     tags: true
 });
+
+let inGameMenu = Blessed.box({
+    width: '100%',
+    height: '100%',
+    content: 'some menu stuff',
+    hidden: true,
+    border: 'line'
+});
+
+let gameScreen = Blessed.box({
+    width: '100%',
+    height: '100%',
+    content: 'gamescreen',
+    hidden: true,
+    border: 'line'
+});
+
+inGameMenu.key(['escape'],() =>{
+    "use strict";
+   inGameMenu.hide();
+
+   screen.render();
+});
+
 screen.append(continueMenu);
+screen.append(inGameMenu);
+
 continueMenu.hide();
 
 continueMenu.key(['enter'],() =>{
    journey = false;
+   inGameMenu.setLabel(date.format('MMMM Do YYYY'));
    continueMenu.hide();
-   //clearInterval(gameLoop);
+   inGameMenu.show();
+   inGameMenu.insertBottom('press ESC to return');
+   inGameMenu.focus();
     screen.render();
 });
 
 
 screen.key(['space'],function () {
+    screen.debug("space was clicked");
     continueMenu.show();
     continueMenu.focus();
-
-        //eat();
-        //updateHealth();
-        //checkforWayPoint();
-        journey = true;
-        gameLoop;
-
+    journey = true;
 });
 
 
