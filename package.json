@@ -11,6 +11,12 @@
   "dependencies": {
     "blessed": "^0.1.81",
     "lodash": "^4.17.4",
-    "moment": "^2.18.1"
+    "moment": "^2.18.1",
+    "ncurses": "^0.4.2"
+  },
+  "devDependencies": {
+    "babel-core": "^6.24.1",
+    "babel-loader": "^6.4.1",
+    "babel-preset-es2015": "^6.24.1"
   }
 }

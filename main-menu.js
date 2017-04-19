@@ -1,19 +1,16 @@
-const Blessed = require('blessed');
-const options = require('./options');
-const game = require('./game');
 
+import Blessed from 'blessed';
+import game from './game';
 
+let interval;
 
 function mainMenuModule(screen){
-    "use strict";
-
     const commands = {
-        1: function () {
-            "use strict";
-            game.init(options);
+        1() {
+           process.emit('player:continue');
         },
-        'q': function() {
-            "use strict";
+        'q'() {
+            clearInterval(interval);
             const exitQuestion = Blessed.question({
                 label: "Exit Game?",
                 content: "Are you sure you want to quit?",
@@ -29,10 +26,14 @@ function mainMenuModule(screen){
             exitQuestion.setFront();
             screen.render();
 
-            exitQuestion.ask("Are you sure you want to quit?",function(arg1,result,arg2){
-               if(result){
-                   process.exit(0);
-               }
+            exitQuestion.ask("Are you sure you want to quit?",(arg1, result, arg2) => {
+                if(result === true){
+                    process.exit(0);
+                }
+                else{
+                    //todo emit continue event
+                    commands[1]();
+                }
             });
         }
     };
@@ -50,6 +51,7 @@ function mainMenuModule(screen){
 
     });
 
+
     const input = Blessed.textbox({
         bottom: 0,
         left: 21,
@@ -65,31 +67,23 @@ function mainMenuModule(screen){
     mainMenu.append(input);
 
 
-
-    mainMenu.key([1,2,3,4,5,6,7,'q'],function(option){
+    mainMenu.key([1,2,3,4,5,6,7,'q'],option => {
         input.setValue(option);
         screen.render();
     });
 
-    input.key('enter',function(){
-        "use strict";
+    input.key('enter',() => {
         commands[input.getValue()]();
         screen.render();
     });
 
-    mainMenu.on('element keypress',function(el,ch,key){
+    mainMenu.on('element keypress',(el, ch, key) => {
         if(key.full === 'C-c'){
             process.exit(0);
         }
     });
 
-
-    screen.append(mainMenu);
-    input.focus();
-    screen.render();
-
     return mainMenu;
-
 }
 
-module.exports = mainMenuModule;
+export default mainMenuModule;
